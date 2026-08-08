@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Peptide Explorer teaches people how to evaluate peptide research by separating claims, evidence, limitations, laboratory documentation, and regulatory context." />
+  <title>Peptide Explorer — Learn to Evaluate the Evidence</title>
+  <link rel="stylesheet" href="assets/site.css" />
+</head>
+<body>
+  <header class="site_header">
+    <nav class="shell nav">
+      <a class="brand" href="index.html"><span class="brand_mark" aria-hidden="true"></span>Peptide Explorer</a>
+      <div class="nav_links">
+        <a href="#learn">How it works</a>
+        <a href="#example">Evidence example</a>
+        <a href="#principles">Principles</a>
+        <a class="nav_cta" href="peptides/bpc-157.html">Explore BPC-157</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="shell hero">
+      <div class="eyebrow">RESEARCH LITERACY FOR PEPTIDES</div>
+      <h1>Learn how to evaluate peptide claims, not just read them.</h1>
+      <p class="lede">Peptide Explorer is an educational research tool designed to help beginners distinguish stronger evidence from weaker evidence, understand study limitations, and learn how scientific and laboratory documentation should be interpreted.</p>
+      <div class="hero_actions">
+        <a class="button primary" href="peptides/bpc-157.html">Open the first evidence page</a>
+        <a class="button secondary" href="#learn">See how the model works</a>
+      </div>
+    </section>
+
+    <section class="shell">
+      <div class="notice"><strong>Educational research tool — not medical advice.</strong> Peptide Explorer does not recommend peptide use, dosing, purchasing, or sourcing. Its purpose is to teach users how to inspect evidence and uncertainty.</div>
+    </section>
+
+    <section id="learn" class="shell section">
+      <div class="section_header">
+        <div>
+          <div class="eyebrow">WHAT THE USER SHOULD LEARN</div>
+          <h2>Three skills come first.</h2>
+        </div>
+        <p class="section_intro">These are the first learning outcomes behind the architecture. Features are useful only if they make these skills easier to acquire.</p>
+      </div>
+      <div class="grid_3">
+        <article class="card"><div class="card_number">01 / EVIDENCE</div><h3>Distinguish strong evidence from weak evidence</h3><p>Learn why a cell experiment, an animal study, a two-person pilot, and a randomized human trial do not support the same level of confidence.</p></article>
+        <article class="card"><div class="card_number">02 / LIMITATIONS</div><h3>Understand what a study cannot prove</h3><p>Look at sample size, controls, study population, endpoints, duration, replication, bias, and other factors that constrain a conclusion.</p></article>
+        <article class="card"><div class="card_number">03 / LAB DOCUMENTS</div><h3>Interpret laboratory documentation</h3><p>Understand what COAs, HPLC, LC-MS, sterility tests, endotoxin tests, purity values, and batch information can—and cannot—tell you.</p></article>
+      </div>
+    </section>
+
+    <section id="principles" class="shell section">
+      <div class="panel">
+        <div class="eyebrow">CORE INFORMATION MODEL</div>
+        <h2>Start with the claim, then walk backward to the evidence.</h2>
+        <p>The site is structured so that a scientific claim is never presented as an isolated fact. A user should be able to inspect the research, see how the evidence was assessed, understand the important limitations, and open the original source.</p>
+        <div class="path">
+          <div class="path_step"><strong>Peptide</strong><span>The research subject and identity anchor.</span></div>
+          <div class="path_step"><strong>Claim</strong><span>The exact assertion being evaluated.</span></div>
+          <div class="path_step"><strong>Study</strong><span>The experiment or published research.</span></div>
+          <div class="path_step"><strong>Assessment</strong><span>How much confidence the evidence supports.</span></div>
+          <div class="path_step"><strong>Limitations + citation</strong><span>What remains uncertain and where the user can verify it.</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="example" class="shell section">
+      <div class="section_header">
+        <div><div class="eyebrow">FIRST WORKED EXAMPLE</div><h2>BPC-157 evidence page</h2></div>
+        <p class="section_intro">BPC-157 is useful as an educational example because there is a visible difference between the volume of preclinical discussion and the amount of controlled human evidence.</p>
+      </div>
+      <div class="example_card">
+        <article class="card example_summary">
+          <div class="eyebrow">CLAIM-FIRST EXPLORATION</div>
+          <h3>See evidence and uncertainty side by side.</h3>
+          <p>The page separates human evidence from preclinical evidence, exposes study limitations, links to original sources, and keeps regulatory context distinct from evidence of efficacy.</p>
+          <div class="hero_actions"><a class="button primary" href="peptides/bpc-157.html">Explore BPC-157</a></div>
+        </article>
+        <div class="metric_stack">
+          <div class="metric"><span>Human evidence</span><strong>Very limited</strong></div>
+          <div class="metric"><span>Preclinical evidence</span><strong>Substantial research activity</strong></div>
+          <div class="metric"><span>Primary uncertainty</span><strong>Translation to human benefit and safety</strong></div>
+          <div class="metric"><span>Regulatory context</span><strong>Shown separately from scientific efficacy</strong></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Peptide Explorer prototype · Claim-first research education · Static shareable build</footer>
+</body>
+</html>
