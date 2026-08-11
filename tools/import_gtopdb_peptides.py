@@ -5,6 +5,7 @@ import io
 import json
 import sys
 import urllib.request
+from collections import Counter
 from datetime import date
 from pathlib import Path
 
@@ -117,7 +118,8 @@ def main():
     source_release, reader = prepare_csv(text)
 
     records = []
-    seen = set()
+    seen_record_ids = set()
+    canonical_name_counts = Counter()
     rows_processed = 0
     rows_without_name = 0
 
@@ -128,12 +130,18 @@ def main():
             rows_without_name += 1
             continue
 
+        ligand_id = (row.get("Ligand id") or "").strip()
+        if not ligand_id:
+            raise RuntimeError(f"CSV row {rows_processed} has Name '{name}' but no Ligand id")
+
+        record_id = f"gtopdb:{ligand_id}"
+        if record_id in seen_record_ids:
+            raise RuntimeError(f"duplicate GtoPdb ligand identity: {record_id}")
+        seen_record_ids.add(record_id)
+
         species = (row.get("Species") or "").strip()
         record_name = canonical_name(name, species)
-        key = record_name.casefold()
-        if key in seen:
-            raise RuntimeError(f"duplicate canonical name after normalization: {record_name}")
-        seen.add(key)
+        canonical_name_counts[record_name.casefold()] += 1
 
         peptide_type = (row.get("Type") or "").strip()
         is_endogenous = "endogenous" in peptide_type.lower()
@@ -150,6 +158,7 @@ def main():
             status.append("endogenous" if is_endogenous else "documented_peptide")
 
         record = {
+            "record_id": record_id,
             "canonical_name": record_name,
             "display_name": name,
             "aliases": [],
@@ -170,7 +179,7 @@ def main():
             "safety_summary": None,
             "identity_status": "verified_source_identity",
             "database_ids": {
-                "gtopdb_ligand_id": (row.get("Ligand id") or "").strip() or None,
+                "gtopdb_ligand_id": ligand_id,
                 "pubchem_sid": (row.get("PubChem SID") or "").strip() or None,
                 "pubchem_cid": (row.get("PubChem CID") or "").strip() or None,
                 "uniprot": split_values(row.get("UniProt id")),
@@ -199,9 +208,11 @@ def main():
         }
         records.append(record)
 
+    duplicate_name_count = sum(1 for count in canonical_name_counts.values() if count > 1)
     print(f"CSV rows processed: {rows_processed}")
     print(f"rows without Name: {rows_without_name}")
     print(f"peptide records generated: {len(records)}")
+    print(f"canonical names shared by multiple ligand records: {duplicate_name_count}")
 
     if len(records) < 2000:
         raise RuntimeError(
@@ -209,7 +220,7 @@ def main():
             f"from {rows_processed} CSV rows"
         )
 
-    records.sort(key=lambda record: record["canonical_name"].casefold())
+    records.sort(key=lambda record: (record["canonical_name"].casefold(), record["record_id"]))
     CATALOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     with CATALOG_PATH.open("w", encoding="utf-8") as output:
         for record in records:
@@ -217,13 +228,15 @@ def main():
 
     metadata = {
         "format": "peptide-catalog-jsonl",
-        "schema_version": 1,
+        "schema_version": 2,
         "record_count": len(records),
         "description": "Canonical peptide catalog for Peptide Explorer. One JSON object per line in peptides.jsonl.",
         "last_verified": date.today().isoformat(),
         "source_release": source_release,
         "source_url": SOURCE_URL,
         "import_method": "tools/import_gtopdb_peptides.py",
+        "identity_key": "record_id",
+        "duplicate_canonical_name_groups": duplicate_name_count,
     }
     METADATA_PATH.write_text(
         json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
