@@ -1,0 +1,1 @@
+Import the current authoritative GtoPdb peptide catalog into data/peptides.jsonl.
