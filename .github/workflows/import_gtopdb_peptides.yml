@@ -8,6 +8,8 @@ on:
       - main
     paths:
       - tools/import_gtopdb_peptides.py
+      - tools/validate_catalog.py
+      - tools/summarize_catalog.py
       - .github/workflows/import_gtopdb_peptides.yml
       - data/catalog_import_trigger.txt
 
@@ -34,14 +36,17 @@ jobs:
       - name: Validate generated catalog
         run: python tools/validate_catalog.py data/peptides.jsonl
 
+      - name: Verify record count and generate summary
+        run: python tools/summarize_catalog.py
+
       - name: Commit generated catalog
         run: |
-          if git diff --quiet -- data/peptides.jsonl data/catalog_metadata.json; then
+          if git diff --quiet -- data/peptides.jsonl data/catalog_metadata.json data/catalog_summary.json; then
             echo "Catalog already current"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/peptides.jsonl data/catalog_metadata.json
+          git add data/peptides.jsonl data/catalog_metadata.json data/catalog_summary.json
           git commit -m "Import current GtoPdb peptide catalog"
           git push origin HEAD:${{ github.head_ref }}
