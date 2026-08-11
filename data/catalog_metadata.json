@@ -1,7 +1,12 @@
 {
   "format": "peptide-catalog-jsonl",
-  "schema_version": 1,
-  "record_count": 0,
+  "schema_version": 2,
+  "record_count": 2452,
   "description": "Canonical peptide catalog for Peptide Explorer. One JSON object per line in peptides.jsonl.",
-  "last_verified": null
+  "last_verified": "2026-08-11",
+  "source_release": "GtoPdb Version: 2026.2 - published: 2026-06-15",
+  "source_url": "https://www.guidetopharmacology.org/DATA/peptides.csv",
+  "import_method": "tools/import_gtopdb_peptides.py",
+  "identity_key": "record_id",
+  "duplicate_canonical_name_groups": 2
 }
