@@ -76,26 +76,22 @@ def fetch_source():
 
 
 def prepare_csv(text):
+    parsed_rows = list(csv.reader(io.StringIO(text)))
+    parsed_rows = [row for row in parsed_rows if row and any(cell.strip() for cell in row)]
+
+    if not parsed_rows:
+        raise RuntimeError("GtoPdb response contained no CSV rows")
+
     source_release = "unknown"
-    csv_lines = []
+    first_cell = parsed_rows[0][0].strip() if parsed_rows[0] else ""
+    if first_cell.startswith("#"):
+        source_release = first_cell.lstrip("#").strip()
+        parsed_rows = parsed_rows[1:]
 
-    for raw_line in text.splitlines():
-        stripped = raw_line.strip()
-        if not stripped:
-            continue
-        if stripped.startswith("#"):
-            if source_release == "unknown":
-                source_release = stripped.lstrip("#").strip()
-            continue
-        csv_lines.append(raw_line)
+    if not parsed_rows:
+        raise RuntimeError("GtoPdb response contained metadata but no CSV header/data rows")
 
-    if not csv_lines:
-        raise RuntimeError("GtoPdb response contained no CSV rows after comments/blank lines were removed")
-
-    csv_text = "\n".join(csv_lines)
-    reader = csv.DictReader(io.StringIO(csv_text))
-    headers = [header.strip() for header in (reader.fieldnames or []) if header]
-
+    headers = [header.strip() for header in parsed_rows[0]]
     print(f"CSV headers ({len(headers)}): {headers}")
 
     missing_columns = sorted(EXPECTED_COLUMNS - set(headers))
@@ -106,6 +102,12 @@ def prepare_csv(text):
             + ". Actual headers: "
             + ", ".join(headers)
         )
+
+    csv_buffer = io.StringIO()
+    writer = csv.writer(csv_buffer, lineterminator="\n")
+    writer.writerows(parsed_rows)
+    csv_buffer.seek(0)
+    reader = csv.DictReader(csv_buffer)
 
     return source_release, reader
 
