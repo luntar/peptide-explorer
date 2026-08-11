@@ -1,0 +1,17 @@
+{
+  "total_records": 2452,
+  "source_release": "GtoPdb Version: 2026.2 - published: 2026-06-15",
+  "last_verified": "2026-08-11",
+  "identity_key": "record_id",
+  "duplicate_canonical_name_groups": 2,
+  "approved_records": 141,
+  "withdrawn_records": 3,
+  "category_counts": {
+    "endogenous peptide": 837,
+    "other characterized peptide": 1615
+  },
+  "evidence_counts": {
+    "E0": 2311,
+    "E6": 141
+  }
+}
