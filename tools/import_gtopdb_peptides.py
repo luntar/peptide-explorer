@@ -12,6 +12,16 @@ SOURCE_URL = "https://www.guidetopharmacology.org/DATA/peptides.csv"
 CATALOG_PATH = Path("data/peptides.jsonl")
 METADATA_PATH = Path("data/catalog_metadata.json")
 
+EXPECTED_COLUMNS = {
+    "Ligand id",
+    "Name",
+    "Species",
+    "Type",
+    "Approved",
+    "Withdrawn",
+    "Single letter amino acid sequence",
+}
+
 
 def truthy(value):
     return str(value or "").strip().lower() in {"true", "yes", "1", "y"}
@@ -29,20 +39,91 @@ def canonical_name(name, species):
     return f"{name} ({species})" if species else name
 
 
-def main():
-    with urllib.request.urlopen(SOURCE_URL, timeout=60) as response:
-        text = response.read().decode("utf-8-sig")
+def fetch_source():
+    request = urllib.request.Request(
+        SOURCE_URL,
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; PeptideExplorerCatalog/1.0)",
+            "Accept": "text/csv,text/plain;q=0.9,*/*;q=0.1",
+        },
+    )
 
-    lines = text.splitlines()
-    source_release = lines[0].lstrip("#").strip() if lines and lines[0].startswith("#") else "unknown"
-    csv_text = "\n".join(line for line in lines if not line.startswith("#"))
+    with urllib.request.urlopen(request, timeout=60) as response:
+        content_type = response.headers.get_content_type()
+        raw_data = response.read()
+        final_url = response.geturl()
+
+    if not raw_data:
+        raise RuntimeError("GtoPdb peptide download returned an empty response")
+
+    text = raw_data.decode("utf-8-sig", errors="replace")
+    preview = text[:300].replace("\n", "\\n").replace("\r", "\\r")
+
+    print(f"source URL: {SOURCE_URL}")
+    print(f"final URL: {final_url}")
+    print(f"HTTP content type: {content_type}")
+    print(f"downloaded bytes: {len(raw_data)}")
+    print(f"response preview: {preview}")
+
+    lowered = text.lstrip().lower()
+    if lowered.startswith("<!doctype html") or lowered.startswith("<html"):
+        raise RuntimeError(
+            "GtoPdb returned HTML instead of the peptide CSV. "
+            "This may indicate an access, login, redirect, or service error."
+        )
+
+    return text
+
+
+def prepare_csv(text):
+    source_release = "unknown"
+    csv_lines = []
+
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if stripped.startswith("#"):
+            if source_release == "unknown":
+                source_release = stripped.lstrip("#").strip()
+            continue
+        csv_lines.append(raw_line)
+
+    if not csv_lines:
+        raise RuntimeError("GtoPdb response contained no CSV rows after comments/blank lines were removed")
+
+    csv_text = "\n".join(csv_lines)
     reader = csv.DictReader(io.StringIO(csv_text))
+    headers = [header.strip() for header in (reader.fieldnames or []) if header]
+
+    print(f"CSV headers ({len(headers)}): {headers}")
+
+    missing_columns = sorted(EXPECTED_COLUMNS - set(headers))
+    if missing_columns:
+        raise RuntimeError(
+            "GtoPdb peptide CSV is missing expected columns: "
+            + ", ".join(missing_columns)
+            + ". Actual headers: "
+            + ", ".join(headers)
+        )
+
+    return source_release, reader
+
+
+def main():
+    text = fetch_source()
+    source_release, reader = prepare_csv(text)
 
     records = []
     seen = set()
+    rows_processed = 0
+    rows_without_name = 0
+
     for row in reader:
+        rows_processed += 1
         name = (row.get("Name") or "").strip()
         if not name:
+            rows_without_name += 1
             continue
 
         species = (row.get("Species") or "").strip()
@@ -91,7 +172,7 @@ def main():
                 "pubchem_sid": (row.get("PubChem SID") or "").strip() or None,
                 "pubchem_cid": (row.get("PubChem CID") or "").strip() or None,
                 "uniprot": split_values(row.get("UniProt id")),
-                "ensembl": split_values(row.get("Ensembl id"))
+                "ensembl": split_values(row.get("Ensembl id")),
             },
             "peptide_details": {
                 "source_type": peptide_type or None,
@@ -103,21 +184,28 @@ def main():
                 "subunit_ids": split_values(row.get("Subunit ids")),
                 "subunit_names": split_values(row.get("Subunit names")),
                 "labelled": truthy(row.get("Labelled")),
-                "radioactive": truthy(row.get("Radioactive"))
+                "radioactive": truthy(row.get("Radioactive")),
             },
             "sources": [{
                 "name": "IUPHAR/BPS Guide to PHARMACOLOGY",
                 "dataset": "complete peptide ligand list",
                 "url": SOURCE_URL,
                 "release": source_release,
-                "retrieved_date": date.today().isoformat()
+                "retrieved_date": date.today().isoformat(),
             }],
-            "last_verified": date.today().isoformat()
+            "last_verified": date.today().isoformat(),
         }
         records.append(record)
 
+    print(f"CSV rows processed: {rows_processed}")
+    print(f"rows without Name: {rows_without_name}")
+    print(f"peptide records generated: {len(records)}")
+
     if len(records) < 2000:
-        raise RuntimeError(f"unexpectedly small peptide import: {len(records)} records")
+        raise RuntimeError(
+            f"unexpectedly small peptide import: {len(records)} records "
+            f"from {rows_processed} CSV rows"
+        )
 
     records.sort(key=lambda record: record["canonical_name"].casefold())
     CATALOG_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -133,9 +221,12 @@ def main():
         "last_verified": date.today().isoformat(),
         "source_release": source_release,
         "source_url": SOURCE_URL,
-        "import_method": "tools/import_gtopdb_peptides.py"
+        "import_method": "tools/import_gtopdb_peptides.py",
     }
-    METADATA_PATH.write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    METADATA_PATH.write_text(
+        json.dumps(metadata, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     print(f"imported {len(records)} peptide records from {source_release}")
     return 0
 
