@@ -1,0 +1,7 @@
+{
+  "format": "peptide-catalog-jsonl",
+  "schema_version": 1,
+  "record_count": 0,
+  "description": "Canonical peptide catalog for Peptide Explorer. One JSON object per line in peptides.jsonl.",
+  "last_verified": null
+}
