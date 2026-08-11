@@ -1,3 +1,4 @@
+# Fetches the authoritative GtoPdb peptide export and regenerates the JSONL catalog.
 name: Import GtoPdb peptide catalog
 
 on:
