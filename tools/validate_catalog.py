@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 required_fields = {
+    "record_id",
     "canonical_name",
     "primary_category",
     "evidence_level",
@@ -15,7 +16,7 @@ required_fields = {
 valid_evidence_levels = {f"E{level}" for level in range(7)}
 
 
-def validate_record(record, line_number, canonical_names):
+def validate_record(record, line_number, record_ids):
     errors = []
 
     if not isinstance(record, dict):
@@ -27,17 +28,20 @@ def validate_record(record, line_number, canonical_names):
             f"line {line_number}: missing required fields: {', '.join(missing_fields)}"
         )
 
+    record_id = record.get("record_id")
+    if record_id is not None:
+        if not isinstance(record_id, str) or not record_id.strip():
+            errors.append(f"line {line_number}: record_id must be a non-empty string")
+        else:
+            normalized_record_id = record_id.strip().casefold()
+            if normalized_record_id in record_ids:
+                errors.append(f"line {line_number}: duplicate record_id '{record_id}'")
+            record_ids.add(normalized_record_id)
+
     canonical_name = record.get("canonical_name")
     if canonical_name is not None:
         if not isinstance(canonical_name, str) or not canonical_name.strip():
             errors.append(f"line {line_number}: canonical_name must be a non-empty string")
-        else:
-            normalized_name = canonical_name.strip().casefold()
-            if normalized_name in canonical_names:
-                errors.append(
-                    f"line {line_number}: duplicate canonical_name '{canonical_name}'"
-                )
-            canonical_names.add(normalized_name)
 
     evidence_level = record.get("evidence_level")
     if evidence_level is not None and evidence_level not in valid_evidence_levels:
@@ -58,7 +62,7 @@ def validate_record(record, line_number, canonical_names):
 
 
 def validate_catalog(catalog_path):
-    canonical_names = set()
+    record_ids = set()
     errors = []
     record_count = 0
 
@@ -75,9 +79,7 @@ def validate_catalog(catalog_path):
                 continue
 
             record_count += 1
-            errors.extend(
-                validate_record(record, line_number, canonical_names)
-            )
+            errors.extend(validate_record(record, line_number, record_ids))
 
     return record_count, errors
 
